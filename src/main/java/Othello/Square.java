@@ -4,8 +4,7 @@ import javafx.scene.paint.Color;
 
 import javafx.scene.shape.Rectangle;
 
-public class Square extends Rectangle{
-
+class Square extends Rectangle{
     Square(boolean color, int x, int y) {
         setWidth(MainApp.SQUARE_SIZE);
         setHeight(MainApp.SQUARE_SIZE);

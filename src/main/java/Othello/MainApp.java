@@ -71,8 +71,8 @@ public class MainApp extends Application {
         status_bar.updateStatusBar();
         buttonControl();
         pane.setPrefSize(640,640);
-        for (int x = 0;x < 8; x++) {
-            for (int y = 0;y < 8; y++) {
+        for (int x = 0;x < WIDTH; x++) {
+            for (int y = 0;y < HEIGHT; y++) {
                 Square square = new Square((x + y) % 2 == 0, x , y);
                 squareGroup.getChildren().add(square);
                 flipMassive[x][y] = EMPTY;
@@ -309,7 +309,8 @@ public class MainApp extends Application {
 
     private void changeTurnAlert() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Change turn");
+        alert.setTitle
+                ("Change turn");
         alert.setHeaderText("Player skip's turn!");
         alert.showAndWait();
     }
