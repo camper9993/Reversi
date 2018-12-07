@@ -1,47 +1,58 @@
 package Othello;
 
-import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
+import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import javafx.stage.Stage;
+import javafx.scene.layout.StackPane;
 import javafx.util.Pair;
-import javafx.scene.control.Button;
+
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import static Othello.ChipType.*;
+import static Othello.Menu.botwork;
 
 
-public class MainApp extends Application {
+public class Board {
 
+    private List<Point> possibleMoves;
+    private StackPane root = new StackPane();
+    private Menu menu = new Menu();
     private String winner = "";
-    private StatusBar status_bar = new StatusBar();
+    private StatusBar status_bar = new StatusBar(this);
     private HBox hBox = new HBox();
     private Pane pane = new Pane();
-    static ChipType currentPlayer = WHITE;
+    private ChipType currentPlayer = WHITE;
     private Button restart = new Button("Restart");
-
-    private final int  HEIGHT = 8;
-    private final int  WIDTH = 8;
+    private final static int  HEIGHT = 8;
+    private final static int  WIDTH = 8;
     private ChipType[][] flipMassive = new ChipType[WIDTH][HEIGHT];
     private ChipType[][] board = new ChipType[WIDTH][HEIGHT];
     private Group squareGroup = new Group();
     private Group chipGroup = new Group();
     final static double  SQUARE_SIZE = 80.0;
-    static Integer whiteChips = 4;
-    static Integer blackChips = 4;
+    private Integer whiteChips = 4;
+    private Integer blackChips = 4;
     private List<Pair<Integer,Integer>> directions;
+    private Bot bot;
+
 
     private void mouseSetChip (MouseEvent mouse) {
         int x = mouseXtoTileX(mouse.getSceneX()), y = mouseYtoTileY(mouse.getSceneY());
-        setChip(x,y);
+        setChipUsual(x,y);
+        Point point;
+        if (botwork && currentPlayer == BLACK) {
+            point = bot.nextTurn(this);
+            setChip(point.x,point.y);
+            checkForGameOverBot();
+        }
     }
 
     private int mouseXtoTileX(double x) {
@@ -64,13 +75,7 @@ public class MainApp extends Application {
         directions.add(new Pair<>(1,0));
     }
 
-    private Parent createBoard() {
-        restart.setStyle("-fx-background-color: #FECC00");
-        restart.setPrefSize(80,30);
-        status_bar.getStatusBar().getChildren().add(restart);
-        status_bar.updateStatusBar();
-        buttonControl();
-        pane.setPrefSize(640,640);
+    private void drawBoard(){
         for (int x = 0;x < WIDTH; x++) {
             for (int y = 0;y < HEIGHT; y++) {
                 Square square = new Square((x + y) % 2 == 0, x , y);
@@ -79,18 +84,36 @@ public class MainApp extends Application {
                 board[x][y] = EMPTY;
             }
         }
+    }
+
+    Parent createBoard() {
+        root.setPrefSize(720,640);
+        restart.setStyle("-fx-background-color: #FECC00");
+        restart.setPrefSize(80,30);
+        status_bar.getStatusBar().getChildren().add(restart);
+        status_bar.updateStatusBar();
+        buttonControl();
+        pane.setPrefSize(640,640);
+        drawBoard();
         addDirections();
+        bot = new Bot();
         pane.getChildren().addAll(squareGroup);
         board[3][3] = WHITE;
         board[4][4] = board[3][3];
         board[3][4] = BLACK;
         board[4][3] = board[3][4];
-        checkPossibleTurns();
+        checkPossibleTurns(currentPlayer);
         updateChips();
         pane.setOnMouseClicked(this::mouseSetChip);
         pane.getChildren().add(chipGroup);
         hBox.getChildren().addAll(pane,status_bar.getStatusBar());
-        return hBox;
+        root.getChildren().addAll(hBox,menu.getMenu());
+        root.setOnKeyPressed(k -> {
+            KeyCode code =k.getCode();
+            if (code.equals(KeyCode.ESCAPE))
+                menu.getMenu().toFront();
+        });
+        return root;
     }
 
     private void updateChips() {
@@ -109,30 +132,41 @@ public class MainApp extends Application {
         }
     }
 
-    private void changeTurn() {
-        if (currentPlayer == WHITE)
-            currentPlayer = BLACK;
-        else currentPlayer = WHITE;
+    private void updateScore() {
+        whiteChips = 0;
+        blackChips = 0;
+        for (int x = 0;x < WIDTH;x++) {
+            for (int y = 0; y < HEIGHT;y++) {
+                if (board[x][y] == WHITE)
+                    whiteChips++;
+                if (board[x][y] == BLACK)
+                    blackChips++;
+            }
+        }
     }
+
+    private void changeTurn() {
+            if (currentPlayer == WHITE)
+                currentPlayer = BLACK;
+            else currentPlayer = WHITE;
+    }
+
 
     private boolean isOnBoard(int x, int y) {
         return (x < HEIGHT && x >= 0) && (y  < WIDTH && y >= 0);
     }
 
-    private void checkPossibleTurns() {
+    void checkPossibleTurns(ChipType player) {
+        possibleMoves = new ArrayList<>();
         ChipType opposingPlayer;
-        if (currentPlayer == WHITE) {
-            opposingPlayer = BLACK;
-        }
-        else opposingPlayer = WHITE;
-
+        opposingPlayer = player == WHITE ? BLACK : WHITE;
         Integer x_check;
         Integer y_check;
 
         for (int x = 0; x < WIDTH; x++) {
             for (int y = 0; y < HEIGHT;y++) {
                 for (Pair<Integer,Integer> pair : directions) {
-                    if (board[x][y] == currentPlayer && isOnBoard(x + pair.getKey(),y + pair.getValue())) {
+                    if (board[x][y] == player && isOnBoard(x + pair.getKey(),y + pair.getValue())) {
                         x_check = x + pair.getKey();
                         y_check = y + pair.getValue();
                         if (isOnBoard(x_check,y_check) && board[x_check][y_check] == opposingPlayer) {
@@ -142,8 +176,11 @@ public class MainApp extends Application {
                                 x_check = x_check + pair.getKey();
                                 y_check = y_check + pair.getValue();
                             }
-                            if (isOnBoard(x_check, y_check) && board[x_check][y_check] == EMPTY)
+                            if (isOnBoard(x_check, y_check) && board[x_check][y_check] == EMPTY) {
                                 board[x_check][y_check] = HELP;
+                                Point point = new Point(x_check,y_check);
+                                possibleMoves.add(point);
+                            }
                         }
                     }
                 }
@@ -151,12 +188,8 @@ public class MainApp extends Application {
         }
     }
 
-    private void flipTheChip(int x,int y) {
-        ChipType opposingPlayer;
-        if (currentPlayer == WHITE) {
-            opposingPlayer = BLACK;
-        }
-        else opposingPlayer = WHITE;
+    private void flipTheChip(int x, int y) {
+        ChipType opposingPlayer = getOpponent();
 
         int x_check;
         int y_check;
@@ -194,7 +227,7 @@ public class MainApp extends Application {
         }
     }
 
-    private void removeHelp() {
+    void removeHelp() {
         for (int x = 0; x < WIDTH; x++) {
             for (int y = 0; y < HEIGHT; y++) {
                 if (board[x][y] == HELP)
@@ -203,17 +236,34 @@ public class MainApp extends Application {
         }
     }
 
-    private void setChip(int x,int y) {
+    private void setChipBot(int x, int y) {
+        setChip(x, y);
+    }
+
+    private void setChipUsual(int x, int y) {
         if (board[x][y] == HELP) {
-            board[x][y] = currentPlayer;
-            flipTheChip(x,y);
-            changeTurn();
-            removeHelp();
-            checkPossibleTurns();
-            updateChips();
-            status_bar.updateStatusBar();
+            setChip(x, y);
         }
         checkForGameOver();
+    }
+
+    private void setChip(int x, int y) {
+        board[x][y] = currentPlayer;
+        flipTheChip(x,y);
+        changeTurn();
+        removeHelp();
+        checkPossibleTurns(currentPlayer);
+        updateChips();
+        status_bar.updateStatusBar();
+    }
+
+    void updateBoard(int x, int y) {
+            board[x][y] = currentPlayer;
+            flipTheChip(x,y);
+            updateScore();
+            changeTurn();
+            removeHelp();
+            checkPossibleTurns(currentPlayer);
     }
 
     private Boolean checkFullBoard() {
@@ -226,7 +276,41 @@ public class MainApp extends Application {
         return true;
     }
 
-    private void checkForGameOver() {
+    private void checkForGameOverBot() {
+        fullBoard();
+        for (int x = 0;x < WIDTH;x++) {
+            for (int y = 0;y < HEIGHT;y++) {
+                if (board[x][y] == HELP) {
+                    return;
+                }
+            }
+        }
+        changeTurnAlert();
+        changeCurrentPlayer();
+        status_bar.updateStatusBar();
+        checkPossibleTurns(currentPlayer);
+        updateChips();
+        for (int x = 0;x < WIDTH;x++) {
+            for (int y = 0;y < HEIGHT;y++) {
+                if (board[x][y] == HELP) {
+                    Point point = bot.nextTurn(this);
+                    setChipBot(point.x,point.y);
+                    checkForGameOverBot();
+                    return;
+                }
+            }
+        }
+        if (blackChips > whiteChips) {
+            winner = "Black win's!";
+        }
+        if (whiteChips > blackChips)
+            winner = "White win's!";
+        if (Objects.equals(blackChips, whiteChips))
+            winner = "It's a tie!";
+        alertWindow();
+    }
+
+    private void fullBoard() {
         if(checkFullBoard()) {
             if (blackChips > whiteChips) {
                 winner = "Black win's!";
@@ -236,9 +320,13 @@ public class MainApp extends Application {
             if (Objects.equals(blackChips, whiteChips))
                 winner = "It's a tie!";
             alertWindow();
-            checkPossibleTurns();
+            checkPossibleTurns(currentPlayer);
             updateChips();
         }
+    }
+
+    private void checkForGameOver() {
+        fullBoard();
         for (int x = 0;x < WIDTH;x++) {
             for (int y = 0;y < HEIGHT;y++) {
                 if (board[x][y] == HELP) {
@@ -252,7 +340,7 @@ public class MainApp extends Application {
         }
         else currentPlayer = WHITE;
             status_bar.updateStatusBar();
-            checkPossibleTurns();
+            checkPossibleTurns(currentPlayer);
             updateChips();
         for (int x = 0;x < WIDTH;x++) {
             for (int y = 0;y < HEIGHT;y++) {
@@ -289,8 +377,9 @@ public class MainApp extends Application {
         board[4][4] = board[3][3];
         board[3][4] = BLACK;
         board[4][3] = board[3][4];
-        checkPossibleTurns();
+        checkPossibleTurns(currentPlayer);
         updateChips();
+        bot = new Bot();
         status_bar.updateStatusBar();
     }
 
@@ -315,16 +404,59 @@ public class MainApp extends Application {
         alert.showAndWait();
     }
 
-    public static void main(String[] args) throws Exception {
-        launch(args);
+    public ChipType[][] getCurrentState() {
+        ChipType[][] currentState = new ChipType[WIDTH][HEIGHT];
+        for (int i = 0;i < WIDTH;i++)
+            System.arraycopy(board[i], 0, currentState[i], 0, HEIGHT);
+        return currentState;
+    }
+    ChipType getCurrentPlayer() {
+        return currentPlayer;
     }
 
-    @Override
-    public void start(Stage primaryStage) throws Exception {
-        Scene scene = new Scene(createBoard());
-        primaryStage.setTitle("Othello");
-        primaryStage.setScene(scene);
-        primaryStage.setResizable(false);
-        primaryStage.show();
+    Integer getBlackScore() {
+        return blackChips;
+    }
+
+    Integer getWhiteScore() {
+        return whiteChips;
+    }
+
+    private ChipType changeCurrentPlayer() {
+        if (currentPlayer == WHITE)
+            currentPlayer = BLACK;
+        else currentPlayer = WHITE;
+        return currentPlayer;
+    }
+
+    ChipType getOpponent(){
+        if (currentPlayer == WHITE)
+            return BLACK;
+        else
+            return WHITE;
+    }
+
+    List<Point> getPossibleMoves() {
+        return possibleMoves;
+    }
+
+    Board cloneBoard() {
+        Board board = new Board();
+        for (int x = 0;x < WIDTH;x++) {
+            for (int y = 0;y < WIDTH;y++) {
+                board.board[x][y] = this.board[x][y];
+                board.flipMassive[x][y] = this.flipMassive[x][y];
+            }
+            board.possibleMoves = this.possibleMoves;
+            board.currentPlayer = this.currentPlayer;
+            board.directions = this.directions;
+            board.blackChips = this.blackChips;
+            board.whiteChips = this.whiteChips;
+        }
+        return board;
+    }
+
+    public int getCurrentScore() {
+        return blackChips - whiteChips;
     }
 }

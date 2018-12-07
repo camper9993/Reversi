@@ -9,7 +9,7 @@ import javafx.util.Duration;
 import javafx.scene.text.Font;
 
 import static Othello.ChipType.WHITE;
-import static Othello.MainApp.*;
+import static Othello.Board.*;
 
 
 class StatusBar extends ImageView {
@@ -23,8 +23,10 @@ class StatusBar extends ImageView {
     private Pane pane = new Pane();
     private double TRANSPARENT_STATUS = 0.3;
     private double NON_TRANSPARENT_STATUS = 0.9;
+    private Board board;
 
-    StatusBar() {
+    StatusBar(Board board) {
+        this.board = board;
         pane.setPrefSize(80, 640);
         pane.setStyle("-fx-background-color: #caaac0");
         whiteImage.setY(160);
@@ -44,8 +46,8 @@ class StatusBar extends ImageView {
     }
 
     void updateStatusBar() {
-        whitescore.setText(whiteChips.toString());
-        blackscore.setText(blackChips.toString());
+        whitescore.setText(board.getWhiteScore().toString());
+        blackscore.setText(board.getBlackScore().toString());
 
         int STATUSBAR_FADE_TIME = 300;
         FadeTransition whiteStatusImageFade = new FadeTransition(Duration.millis(STATUSBAR_FADE_TIME), whiteImage);
@@ -53,7 +55,7 @@ class StatusBar extends ImageView {
         FadeTransition whiteStatusLabelFade = new FadeTransition(Duration.millis(STATUSBAR_FADE_TIME), whitescore);
         FadeTransition blackStatusLabelFade = new FadeTransition(Duration.millis(STATUSBAR_FADE_TIME), blackscore);
 
-        if (currentPlayer == WHITE) {
+        if (board.getCurrentPlayer() == WHITE) {
             onFade(whiteStatusImageFade);
             onFade(whiteStatusLabelFade);
 

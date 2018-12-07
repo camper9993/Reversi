@@ -28,12 +28,12 @@ class Chip extends ImageView {
     private void placeImage(Image image,int x, int y) {
         setImage(image);
         if (image.equals(white) || image.equals(black)) {
-            setX(x * MainApp.SQUARE_SIZE);
-            setY(y * MainApp.SQUARE_SIZE);
+            setX(x * Board.SQUARE_SIZE);
+            setY(y * Board.SQUARE_SIZE);
         }
         else {
-            setX(x * MainApp.SQUARE_SIZE + 25);
-            setY(y * MainApp.SQUARE_SIZE + 25);
+            setX(x * Board.SQUARE_SIZE + 25);
+            setY(y * Board.SQUARE_SIZE + 25);
         }
         setSmooth(true);
     }
