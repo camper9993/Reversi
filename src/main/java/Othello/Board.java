@@ -32,7 +32,7 @@ public class Board {
     private ChipType currentPlayer = WHITE;
     private Button restart = new Button("Restart");
     private final static int  HEIGHT = 8;
-    private final static int  WIDTH = 8;
+    final static int  WIDTH = 8;
     private ChipType[][] flipMassive = new ChipType[WIDTH][HEIGHT];
     private ChipType[][] board = new ChipType[WIDTH][HEIGHT];
     private Group squareGroup = new Group();
@@ -42,16 +42,24 @@ public class Board {
     private Integer blackChips = 4;
     private List<Pair<Integer,Integer>> directions;
     private Bot bot;
+    private CornerPoint cornerPoint;
+    private Point cornerMove;
 
 
     private void mouseSetChip (MouseEvent mouse) {
         int x = mouseXtoTileX(mouse.getSceneX()), y = mouseYtoTileY(mouse.getSceneY());
         setChipUsual(x,y);
-        Point point;
+        Point point = cornerMove;
         if (botwork && currentPlayer == BLACK) {
-            point = bot.nextTurn(this);
-            setChip(point.x,point.y);
-            checkForGameOverBot();
+            if (possibleMoves.contains(point)) {
+                setChip(point.x,point.y);
+                checkForGameOverBot();
+            }
+            else {
+                point = bot.nextTurn(this);
+                setChip(point.x, point.y);
+                checkForGameOverBot();
+            }
         }
     }
 
@@ -180,6 +188,9 @@ public class Board {
                                 board[x_check][y_check] = HELP;
                                 Point point = new Point(x_check,y_check);
                                 possibleMoves.add(point);
+                                CornerPoint cornerPoint = new CornerPoint(point);
+                                if (cornerPoint.isCornerPoint())
+                                    cornerMove = point;
                             }
                         }
                     }
@@ -300,25 +311,13 @@ public class Board {
                 }
             }
         }
-        if (blackChips > whiteChips) {
-            winner = "Black win's!";
-        }
-        if (whiteChips > blackChips)
-            winner = "White win's!";
-        if (Objects.equals(blackChips, whiteChips))
-            winner = "It's a tie!";
+        setWinner();
         alertWindow();
     }
 
     private void fullBoard() {
         if(checkFullBoard()) {
-            if (blackChips > whiteChips) {
-                winner = "Black win's!";
-            }
-            if (whiteChips > blackChips)
-                winner = "White win's!";
-            if (Objects.equals(blackChips, whiteChips))
-                winner = "It's a tie!";
+            setWinner();
             alertWindow();
             checkPossibleTurns(currentPlayer);
             updateChips();
@@ -327,13 +326,8 @@ public class Board {
 
     private void checkForGameOver() {
         fullBoard();
-        for (int x = 0;x < WIDTH;x++) {
-            for (int y = 0;y < HEIGHT;y++) {
-                if (board[x][y] == HELP) {
-                    return;
-                }
-            }
-        }
+        if (!possibleMoves.isEmpty())
+            return;
         changeTurnAlert();
         if (currentPlayer == WHITE) {
             currentPlayer = BLACK;
@@ -342,13 +336,12 @@ public class Board {
             status_bar.updateStatusBar();
             checkPossibleTurns(currentPlayer);
             updateChips();
-        for (int x = 0;x < WIDTH;x++) {
-            for (int y = 0;y < HEIGHT;y++) {
-                if (board[x][y] == HELP) {
-                    return;
-                }
-            }
-        }
+        if (!possibleMoves.isEmpty())
+            return;
+        setWinner();
+        alertWindow();
+    }
+    private void setWinner() {
         if (blackChips > whiteChips) {
             winner = "Black win's!";
         }
@@ -356,9 +349,7 @@ public class Board {
             winner = "White win's!";
         if (Objects.equals(blackChips, whiteChips))
             winner = "It's a tie!";
-        alertWindow();
     }
-
     private void buttonControl() {
         restart.setOnAction(e -> refresh());
     }

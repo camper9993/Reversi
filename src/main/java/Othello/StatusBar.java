@@ -2,20 +2,21 @@ package Othello;
 
 import javafx.animation.FadeTransition;
 import javafx.scene.image.Image;
-import javafx.scene.layout.Pane;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.Pane;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
-import javafx.scene.text.Font;
+
+import java.util.Objects;
 
 import static Othello.ChipType.WHITE;
-import static Othello.Board.*;
 
 
 class StatusBar extends ImageView {
 
-    private Image white = new Image(getClass().getClassLoader().getResource("white100_pieceonly.png").toExternalForm());
-    private Image black = new Image(getClass().getClassLoader().getResource("black100_pieceonly.png").toExternalForm());
+    private Image white = new Image(Objects.requireNonNull(getClass().getClassLoader().getResource("white100_pieceonly.png")).toExternalForm());
+    private Image black = new Image(Objects.requireNonNull(getClass().getClassLoader().getResource("black100_pieceonly.png")).toExternalForm());
     private ImageView whiteImage = new ImageView(white);
     private ImageView blackImage = new ImageView(black);
     private Text whitescore = new Text();
