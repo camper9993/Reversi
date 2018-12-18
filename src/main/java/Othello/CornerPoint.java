@@ -1,16 +1,14 @@
 package Othello;
 
-import java.awt.*;
-
 import static Othello.Board.WIDTH;
 
 class CornerPoint {
-    private Point move;
+    private Coordinates move;
 
-    CornerPoint(Point move) {
+    CornerPoint(Coordinates move) {
         this.move = move;
     }
     boolean isCornerPoint() {
-        return move.x == 0 && move.y == 0 || move.x == 0 && move.y == WIDTH - 1 || move.x == WIDTH - 1 && move.y == 0 || move.x == WIDTH - 1 && move.y == WIDTH - 1;
+        return move.getX() == 0 && move.getY() == 0 || move.getX() == 0 && move.getY() == WIDTH - 1 || move.getX() == WIDTH - 1 && move.getY() == 0 || move.getX() == WIDTH - 1 && move.getY() == WIDTH - 1;
     }
 }

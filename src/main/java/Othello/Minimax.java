@@ -1,6 +1,5 @@
 package Othello;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +19,7 @@ class Minimax {
     private int key;
     private ArrayList<Minimax> nodes;
     private ChipType currentPlayer;
-    private Point chipPlace;
+    private Coordinates chipPlace;
     private int depth;
 
     Minimax(Board board) {
@@ -31,7 +30,7 @@ class Minimax {
         currentPlayer = board.getCurrentPlayer();
     }
 
-    private Minimax(Board board,int depth, Point chipPlace) {
+    private Minimax(Board board,int depth, Coordinates chipPlace) {
         this.board = board.cloneBoard();
         this.depth = depth;
         nodes = new ArrayList<>();
@@ -48,14 +47,14 @@ class Minimax {
         int b = beta;
         int score;
         if (depth > 0) {
-            board.updateBoard(chipPlace.x,chipPlace.y);
+            board.updateBoard(chipPlace.getX(),chipPlace.getY());
         }
-        List<Point> availableMoves = board.getPossibleMoves();
+        List<Coordinates> availableMoves = board.getPossibleMoves();
         if (depth == maxDepth || availableMoves.isEmpty()) {
             key = evaluate();
             return key;
         }
-        for (Point move: availableMoves) {
+        for (Coordinates move: availableMoves) {
             Minimax node = new Minimax(board,depth + 1,move);
             nodes.add(node);
             score = -1 * node.negascount(-1 * b,-1 * a);
@@ -75,9 +74,9 @@ class Minimax {
     private int evaluate() {
         board.removeHelp();
         board.checkPossibleTurns(board.getCurrentPlayer());
-        List<Point> moves = board.getPossibleMoves();
+        List<Coordinates> moves = board.getPossibleMoves();
         board.checkPossibleTurns(board.getOpponent());
-        List<Point> opponentMoves = board.getPossibleMoves();
+        List<Coordinates> opponentMoves = board.getPossibleMoves();
         int blackScore = board.getBlackScore();
         int whiteScore = board.getWhiteScore();
         if (!opponentMoves.isEmpty() && moves.isEmpty()) {
@@ -104,7 +103,7 @@ class Minimax {
     int getKey() {
         return key;
     }
-    Point getChipPlace() {
+    Coordinates getChipPlace() {
         return chipPlace;
     }
 
